@@ -41,14 +41,15 @@ func Read() Config {
 	return configObj
 }
 
-func (c *Config) SetUser(username string) {
+func (c *Config) SetUser(username string) error {
 	c.CurrentUserName = username
 
 	// Update config file
 	err := c.write()
 	if err != nil {
-		fmt.Printf("error while updating JSON: %e", err)
+		return fmt.Errorf("error while updating JSON: %e", err)
 	}
+	return nil
 }
 
 func (c *Config) write() error {
