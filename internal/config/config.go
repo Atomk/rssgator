@@ -23,45 +23,59 @@ func getConfigFilePath() string {
 	return path.Join(homePath, CONFIG_FILE_NAME)
 }
 
-// Read the config file and return the corresponding Config instance.
-func Read() Config {
+// Read the config file and return a pointer to the corresponding Config instance.
+func Read() (*Config, error) {
 	configPath := getConfigFilePath()
 
 	data, err := os.ReadFile(configPath)
-	if err != nil {
-		panic("cannot read file at " + configPath)
+	if os.IsNotExist(err) {
+		// Give the caller the possibility to detect this file does not exist
+		return nil, err
+	} else if err != nil {
+		return nil, fmt.Errorf("cannot read file at %s: %s", configPath, err)
 	}
 
 	configObj := Config{}
 	err = json.Unmarshal(data, &configObj)
 	if err != nil {
-		panic("error while parsing config JSON at " + configPath)
+		return nil, fmt.Errorf("error while parsing config JSON at %s", configPath)
 	}
 
-	return configObj
+	return &configObj, nil
 }
 
 func (c *Config) SetUser(username string) error {
 	c.CurrentUserName = username
 
 	// Update config file
-	err := c.write()
+	err := c.Write()
 	if err != nil {
 		return fmt.Errorf("error while updating JSON: %e", err)
 	}
 	return nil
 }
 
-func (c *Config) write() error {
+// Write the configuration file to disk.
+// The file will be updated, or created if it does not exist.
+func (c *Config) Write() error {
 	data, err := json.Marshal(c)
 	if err != nil {
 		return err
 	}
 	configPath := getConfigFilePath()
+
+	alreadyExisted := true
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		alreadyExisted = false
+	}
 	err = os.WriteFile(configPath, data, 0777)
 	if err != nil {
 		return err
 	}
-	fmt.Println("config file updated at " + configPath)
+	if alreadyExisted {
+		fmt.Println("config file updated at " + configPath)
+	} else {
+		fmt.Println("config file created at " + configPath)
+	}
 	return nil
 }

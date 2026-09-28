@@ -31,8 +31,16 @@ func main() {
 		panic(err)
 	}
 
-	configOptions := config.Read()
-	programState := state{conf: &configOptions}
+	configOptions, err := config.Read()
+	if os.IsNotExist(err) {
+		// Create a basic config so that user is not forced to create it manually
+		fmt.Println("config file not found, creating a new one")
+		configOptions = &config.Config{
+			DbUrl: "postgres://example",
+		}
+		configOptions.Write()
+	}
+	programState := state{conf: configOptions}
 
 	// Command execution
 	if len(os.Args) < 2 {
