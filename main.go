@@ -6,6 +6,12 @@ import (
 )
 
 func main() {
+	fmt.Println("--- before ---")
 	configOptions := config.Read()
-	fmt.Println("DB url: " + configOptions.DbUrl)
+	fmt.Printf("%+v\n", configOptions)
+
+	fmt.Println("--- after ---")
+	configOptions.SetUser("atomk")
+	configOptions = config.Read()
+	fmt.Printf("%+v\n", configOptions)
 }
