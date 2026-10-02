@@ -43,6 +43,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = commandsList.register("reset", handlerReset)
+	if err != nil {
+		panic(err)
+	}
 
 	configOptions, err := config.Read()
 	if os.IsNotExist(err) {
@@ -157,5 +161,20 @@ func handlerRegister(s *state, cmd cliCommand) error {
 	if err != nil {
 		return fmt.Errorf("cannot set user '%s': %w\n", username, err)
 	}
+	return nil
+}
+
+func handlerReset(s *state, cmd cliCommand) error {
+	if len(cmd.args) > 0 {
+		return fmt.Errorf("the `reset` command expects zero arguments, %d found\n", len(cmd.args))
+	}
+
+	ctx := context.Background()
+	err := s.db.DeleteAllUsers(ctx)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("users table cleared successfully")
 	return nil
 }
