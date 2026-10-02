@@ -50,8 +50,10 @@ func (c *Config) SetUser(username string) error {
 	// Update config file
 	err := c.Write()
 	if err != nil {
-		return fmt.Errorf("error while updating JSON: %e", err)
+		return fmt.Errorf("error while updating JSON: %w", err)
 	}
+
+	fmt.Printf("user '%s' is now set as the current user\n", username)
 	return nil
 }
 

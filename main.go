@@ -1,13 +1,22 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"rssgator/internal/config"
+	"rssgator/internal/database"
+	"time"
+
+	// Postgres driver for the database/sql package
+	"github.com/google/uuid"
+	_ "github.com/lib/pq"
 )
 
 type state struct {
 	conf *config.Config
+	db   *database.Queries
 }
 
 type cliCommand struct {
@@ -30,6 +39,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = commandsList.register("register", handlerRegister)
+	if err != nil {
+		panic(err)
+	}
 
 	configOptions, err := config.Read()
 	if os.IsNotExist(err) {
@@ -40,7 +53,18 @@ func main() {
 		}
 		configOptions.Write()
 	}
-	programState := state{conf: configOptions}
+
+	db, err := sql.Open("postgres", configOptions.DbUrl)
+	if err != nil {
+		fmt.Printf("Error while opening DB connection: %s\n", err)
+		os.Exit(1)
+	}
+	dbQueries := database.New(db)
+
+	programState := state{
+		conf: configOptions,
+		db:   dbQueries,
+	}
 
 	// Command execution
 	if len(os.Args) < 2 {
@@ -91,10 +115,47 @@ func handlerLogin(s *state, cmd cliCommand) error {
 	}
 
 	username := cmd.args[0]
-	err := s.conf.SetUser(username)
+
+	_, err := s.db.GetUser(context.Background(), username)
+	if err != nil {
+		// TODO do this only if the error is "no rows found"
+		return fmt.Errorf("user '%s' is not registered\n", username)
+	}
+
+	if s.conf.CurrentUserName == username {
+		fmt.Printf("user '%s' is already the current user\n", username)
+		return nil
+	}
+
+	err = s.conf.SetUser(username)
+	if err != nil {
+		return fmt.Errorf("cannot set user '%s': %w\n", username, err)
+	}
+	return nil
+}
+
+func handlerRegister(s *state, cmd cliCommand) error {
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("the `register` command expects one argument (username)")
+	}
+
+	username := cmd.args[0]
+	ctx := context.Background()
+
+	_, err := s.db.CreateUser(ctx, database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      username,
+	})
 	if err != nil {
 		return err
 	}
-	fmt.Println("username set successfully")
+
+	fmt.Printf("user '%s' registered successfully\n", username)
+	err = s.conf.SetUser(username)
+	if err != nil {
+		return fmt.Errorf("cannot set user '%s': %w\n", username, err)
+	}
 	return nil
 }
