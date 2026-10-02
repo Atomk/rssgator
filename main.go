@@ -47,6 +47,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = commandsList.register("users", handlerListUsers)
+	if err != nil {
+		panic(err)
+	}
 
 	configOptions, err := config.Read()
 	if os.IsNotExist(err) {
@@ -176,5 +180,32 @@ func handlerReset(s *state, cmd cliCommand) error {
 	}
 
 	fmt.Println("users table cleared successfully")
+	return nil
+}
+
+func handlerListUsers(s *state, cmd cliCommand) error {
+	if len(cmd.args) > 0 {
+		return fmt.Errorf("the `users` command expects zero arguments, %d found\n", len(cmd.args))
+	}
+
+	ctx := context.Background()
+	users, err := s.db.GetAllUsers(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(users) == 0 {
+		fmt.Println("no registered users")
+		return nil
+	}
+
+	fmt.Printf("found %d registered users\n", len(users))
+	for _, user := range users {
+		if user.Name == s.conf.CurrentUserName {
+			fmt.Printf("- %s (current)\n", user.Name)
+		} else {
+			fmt.Printf("- %s\n", user.Name)
+		}
+	}
 	return nil
 }
