@@ -14,7 +14,7 @@ import (
 
 func handlerLogin(s *state, cmd cliCommand) error {
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("the `login` command expects one argument (username)")
+		return fmt.Errorf("the `%s` command expects one argument (username), %d found\n", cmd.name, len(cmd.args))
 	}
 
 	username := cmd.args[0]
@@ -39,7 +39,7 @@ func handlerLogin(s *state, cmd cliCommand) error {
 
 func handlerRegister(s *state, cmd cliCommand) error {
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("the `register` command expects one argument (username)")
+		return fmt.Errorf("the `%s` command expects one argument (username), %d found\n", cmd.name, len(cmd.args))
 	}
 
 	username := cmd.args[0]
@@ -65,7 +65,7 @@ func handlerRegister(s *state, cmd cliCommand) error {
 
 func handlerReset(s *state, cmd cliCommand) error {
 	if len(cmd.args) > 0 {
-		return fmt.Errorf("the `reset` command expects zero arguments, %d found\n", len(cmd.args))
+		return fmt.Errorf("the `%s` command expects no arguments, %d found\n", cmd.name, len(cmd.args))
 	}
 
 	ctx := context.Background()
@@ -80,7 +80,7 @@ func handlerReset(s *state, cmd cliCommand) error {
 
 func handlerListUsers(s *state, cmd cliCommand) error {
 	if len(cmd.args) > 0 {
-		return fmt.Errorf("the `users` command expects zero arguments, %d found\n", len(cmd.args))
+		return fmt.Errorf("the `%s` command expects no arguments, %d found\n", cmd.name, len(cmd.args))
 	}
 
 	ctx := context.Background()
@@ -107,7 +107,7 @@ func handlerListUsers(s *state, cmd cliCommand) error {
 
 func handlerAggregate(s *state, cmd cliCommand) error {
 	if len(cmd.args) > 0 {
-		return fmt.Errorf("the `agg` command expects zero arguments, %d found\n", len(cmd.args))
+		return fmt.Errorf("the `%s` command expects no arguments, %d found\n", cmd.name, len(cmd.args))
 	}
 
 	const url = "https://www.wagslane.dev/index.xml"
@@ -130,7 +130,7 @@ func handlerAggregate(s *state, cmd cliCommand) error {
 
 func handlerAddFeed(s *state, cmd cliCommand) error {
 	if len(cmd.args) < 2 {
-		return fmt.Errorf("the `addFeed` command expects 2 arguments, %d found\n", len(cmd.args))
+		return fmt.Errorf("the `%s` command expects 2 arguments, %d found\n", cmd.name, len(cmd.args))
 	}
 
 	name := strings.TrimSpace(cmd.args[0])
@@ -163,7 +163,7 @@ func handlerAddFeed(s *state, cmd cliCommand) error {
 
 func handlerListFeeds(s *state, cmd cliCommand) error {
 	if len(cmd.args) != 0 {
-		return fmt.Errorf("the `feeds` command expects no arguments, %d found\n", len(cmd.args))
+		return fmt.Errorf("the `%s` command expects no arguments, %d found\n", cmd.name, len(cmd.args))
 	}
 
 	feeds, err := s.db.GetAllFeedsWithUsername(context.Background())
