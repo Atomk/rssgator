@@ -7,6 +7,7 @@ import (
 	"os"
 	"rssgator/internal/config"
 	"rssgator/internal/database"
+	"rssgator/internal/rss"
 	"time"
 
 	// Postgres driver for the database/sql package
@@ -48,6 +49,10 @@ func main() {
 		panic(err)
 	}
 	err = commandsList.register("users", handlerListUsers)
+	if err != nil {
+		panic(err)
+	}
+	err = commandsList.register("agg", handlerAggregate)
 	if err != nil {
 		panic(err)
 	}
@@ -207,5 +212,28 @@ func handlerListUsers(s *state, cmd cliCommand) error {
 			fmt.Printf("- %s\n", user.Name)
 		}
 	}
+	return nil
+}
+
+func handlerAggregate(s *state, cmd cliCommand) error {
+	if len(cmd.args) > 0 {
+		return fmt.Errorf("the `agg` command expects zero arguments, %d found\n", len(cmd.args))
+	}
+
+	const url = "https://www.wagslane.dev/index.xml"
+	ctx := context.Background()
+	rssFeed, err := rss.FetchFeed(&ctx, url)
+	if err != nil {
+		return err
+	}
+
+	if len(rssFeed.Channel.Items) == 0 {
+		fmt.Println("no RSS channel items")
+		return nil
+	}
+
+	fmt.Printf("found %d RSS items\n", len(rssFeed.Channel.Items))
+
+	fmt.Println(rssFeed)
 	return nil
 }
