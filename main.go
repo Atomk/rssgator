@@ -56,6 +56,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = commandsList.register("feeds", handlerListFeeds)
+	if err != nil {
+		panic(err)
+	}
 
 	configOptions, err := config.Read()
 	if os.IsNotExist(err) {

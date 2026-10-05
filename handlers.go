@@ -160,3 +160,25 @@ func handlerAddFeed(s *state, cmd cliCommand) error {
 	fmt.Println(feed)
 	return nil
 }
+
+func handlerListFeeds(s *state, cmd cliCommand) error {
+	if len(cmd.args) != 0 {
+		return fmt.Errorf("the `feeds` command expects no arguments, %d found\n", len(cmd.args))
+	}
+
+	feeds, err := s.db.GetAllFeedsWithUsername(context.Background())
+	if err != nil {
+		return err
+	}
+
+	if len(feeds) == 0 {
+		fmt.Println("no stored feeds")
+		return nil
+	}
+
+	fmt.Printf("Stored feeds: %d\n", len(feeds))
+	for _, feed := range feeds {
+		fmt.Printf("- %s (%s) | user: %s\n", feed.Name, feed.Url, feed.Username)
+	}
+	return nil
+}
