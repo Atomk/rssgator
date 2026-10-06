@@ -30,35 +30,15 @@ type commands struct {
 func main() {
 	// Initialize commands list
 	commandsList := commands{
-		nameToHandler: make(map[string]cliCommandHandler),
-	}
-	err := commandsList.register("login", handlerLogin)
-	if err != nil {
-		panic(err)
-	}
-	err = commandsList.register("register", handlerRegister)
-	if err != nil {
-		panic(err)
-	}
-	err = commandsList.register("reset", handlerReset)
-	if err != nil {
-		panic(err)
-	}
-	err = commandsList.register("users", handlerListUsers)
-	if err != nil {
-		panic(err)
-	}
-	err = commandsList.register("agg", handlerAggregate)
-	if err != nil {
-		panic(err)
-	}
-	err = commandsList.register("addfeed", handlerAddFeed)
-	if err != nil {
-		panic(err)
-	}
-	err = commandsList.register("feeds", handlerListFeeds)
-	if err != nil {
-		panic(err)
+		nameToHandler: map[string]cliCommandHandler{
+			"login":    handlerLogin,
+			"register": handlerRegister,
+			"reset":    handlerReset,
+			"users":    handlerListUsers,
+			"agg":      handlerAggregate,
+			"addfeed":  handlerAddFeed,
+			"feeds":    handlerListFeeds,
+		},
 	}
 
 	configOptions, err := config.Read()
