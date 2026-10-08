@@ -182,3 +182,40 @@ func handlerListFeeds(s *state, cmd cliCommand) error {
 	}
 	return nil
 }
+
+func handlerFollow(s *state, cmd cliCommand) error {
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("the `%s` command expects 1 argument, %d found\n", cmd.name, len(cmd.args))
+	}
+
+	url := strings.TrimSpace(cmd.args[0])
+	if url == "" {
+		return errors.New("url cannot be empty or made of whitespace")
+	}
+
+	user, err := s.db.GetUser(context.Background(), s.conf.CurrentUserName)
+	if err != nil {
+		// TODO do this only if the error is "no rows found"
+		return fmt.Errorf("current user is '%s' but it does not exist in database\n", s.conf.CurrentUserName)
+	}
+
+	feed, err := s.db.GetFeedByUrl(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("could not get feed with url '%s': %w", url, err)
+	}
+
+	feedFollow, err := s.db.CreateFeedFollows(context.Background(), database.CreateFeedFollowsParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("could not follow feed: %w", err)
+	}
+
+	// feedFollow.UserName should be equal to s.conf.CurrentUserName
+	fmt.Printf("User '%s' now follows '%s'\n", feedFollow.UserName, feedFollow.FeedName)
+	return nil
+}
