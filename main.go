@@ -31,14 +31,15 @@ func main() {
 	// Initialize commands list
 	commandsList := commands{
 		nameToHandler: map[string]cliCommandHandler{
-			"login":    handlerLogin,
-			"register": handlerRegister,
-			"reset":    handlerReset,
-			"users":    handlerListUsers,
-			"agg":      handlerAggregate,
-			"addfeed":  handlerAddFeed,
-			"feeds":    handlerListFeeds,
-			"follow":   handlerFollow,
+			"login":     handlerLogin,
+			"register":  handlerRegister,
+			"reset":     handlerReset,
+			"users":     handlerListUsers,
+			"agg":       handlerAggregate,
+			"addfeed":   handlerAddFeed,
+			"feeds":     handlerListFeeds,
+			"follow":    handlerFollow,
+			"following": handlerListFollowing,
 		},
 	}
 

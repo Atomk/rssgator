@@ -219,3 +219,31 @@ func handlerFollow(s *state, cmd cliCommand) error {
 	fmt.Printf("User '%s' now follows '%s'\n", feedFollow.UserName, feedFollow.FeedName)
 	return nil
 }
+
+func handlerListFollowing(s *state, cmd cliCommand) error {
+	if len(cmd.args) != 0 {
+		return fmt.Errorf("the `%s` command expects no arguments, %d found\n", cmd.name, len(cmd.args))
+	}
+
+	user, err := s.db.GetUser(context.Background(), s.conf.CurrentUserName)
+	if err != nil {
+		// TODO do this only if the error is "no rows found"
+		return fmt.Errorf("current user is '%s' but it does not exist in database\n", s.conf.CurrentUserName)
+	}
+
+	followedFeeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
+	if err != nil {
+		return err
+	}
+
+	if len(followedFeeds) == 0 {
+		fmt.Println("no followed feeds")
+		return nil
+	}
+
+	fmt.Printf("Feeds followed: %d\n", len(followedFeeds))
+	for _, followedFeed := range followedFeeds {
+		fmt.Printf("- %s | user: %s\n", followedFeed.FeedName, followedFeed.UserName)
+	}
+	return nil
+}
