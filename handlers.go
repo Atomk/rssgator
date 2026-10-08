@@ -235,6 +235,39 @@ func handlerFollow(s *state, cmd cliCommand) error {
 	return nil
 }
 
+func handlerUnfollow(s *state, cmd cliCommand) error {
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("the `%s` command expects 1 argument, %d found\n", cmd.name, len(cmd.args))
+	}
+
+	url := strings.TrimSpace(cmd.args[0])
+	if url == "" {
+		return errors.New("url cannot be empty or made of whitespace")
+	}
+
+	user, err := s.db.GetUser(context.Background(), s.conf.CurrentUserName)
+	if err != nil {
+		// TODO do this only if the error is "no rows found"
+		return fmt.Errorf("current user is '%s' but it does not exist in database\n", s.conf.CurrentUserName)
+	}
+
+	feed, err := s.db.GetFeedByUrl(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("could not get feed with url '%s': %w", url, err)
+	}
+
+	err = s.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("could not unfollow '%s': %w", url, err)
+	}
+
+	fmt.Printf("User '%s' does not follow '%s' anymore.\n", user.Name, url)
+	return nil
+}
+
 func handlerListFollowing(s *state, cmd cliCommand) error {
 	if len(cmd.args) != 0 {
 		return fmt.Errorf("the `%s` command expects no arguments, %d found\n", cmd.name, len(cmd.args))

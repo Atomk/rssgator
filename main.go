@@ -40,6 +40,7 @@ func main() {
 			"feeds":     handlerListFeeds,
 			"follow":    handlerFollow,
 			"following": handlerListFollowing,
+			"unfollow":  handlerUnfollow,
 		},
 	}
 
