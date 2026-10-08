@@ -157,6 +157,11 @@ func handlerAddFeed(s *state, cmd cliCommand) error {
 		return fmt.Errorf("could not create feed: %w", err)
 	}
 
+	_, err = insertFeedFollows(s, user.ID, feed.ID)
+	if err != nil {
+		return nil
+	}
+
 	fmt.Println(feed)
 	return nil
 }
@@ -183,6 +188,22 @@ func handlerListFeeds(s *state, cmd cliCommand) error {
 	return nil
 }
 
+// Add a new row in the feed_follows table, which means that a user is now
+// following a feed.
+func insertFeedFollows(s *state, userID, feedID uuid.UUID) (database.CreateFeedFollowsRow, error) {
+	feedFollow, err := s.db.CreateFeedFollows(context.Background(), database.CreateFeedFollowsParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    userID,
+		FeedID:    feedID,
+	})
+	if err != nil {
+		return database.CreateFeedFollowsRow{}, fmt.Errorf("could not follow feed: %w", err)
+	}
+	return feedFollow, nil
+}
+
 func handlerFollow(s *state, cmd cliCommand) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("the `%s` command expects 1 argument, %d found\n", cmd.name, len(cmd.args))
@@ -204,15 +225,9 @@ func handlerFollow(s *state, cmd cliCommand) error {
 		return fmt.Errorf("could not get feed with url '%s': %w", url, err)
 	}
 
-	feedFollow, err := s.db.CreateFeedFollows(context.Background(), database.CreateFeedFollowsParams{
-		ID:        uuid.New(),
-		CreatedAt: time.Now().UTC(),
-		UpdatedAt: time.Now().UTC(),
-		UserID:    user.ID,
-		FeedID:    feed.ID,
-	})
+	feedFollow, err := insertFeedFollows(s, user.ID, feed.ID)
 	if err != nil {
-		return fmt.Errorf("could not follow feed: %w", err)
+		return nil
 	}
 
 	// feedFollow.UserName should be equal to s.conf.CurrentUserName
