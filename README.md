@@ -14,6 +14,10 @@ go run .
 
 ## Updating database and models
 
+You need:
+- [sqlc](https://sqlc.dev/): `go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest`
+- [goose](https://github.com/pressly/goose): `go install github.com/pressly/goose/v3/cmd/goose@latest`
+
 When adding a new migration, you need to:
 1. Run `goose` to update the database (after replacing auth in the connection string)
     ```sh
