@@ -22,7 +22,7 @@ VALUES (
     $5,
     $6
 )
-RETURNING id, created_at, updated_at, name, url, user_id
+RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at
 `
 
 type CreateFeedParams struct {
@@ -51,17 +51,19 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		&i.Name,
 		&i.Url,
 		&i.UserID,
+		&i.LastFetchedAt,
 	)
 	return i, err
 }
 
 const getAllFeedsWithUsername = `-- name: GetAllFeedsWithUsername :many
-SELECT feeds.name, feeds.url, users.name as username
+SELECT feeds.id, feeds.name, feeds.url, users.name as username
 FROM feeds
 INNER JOIN users ON feeds.user_id = users.id
 `
 
 type GetAllFeedsWithUsernameRow struct {
+	ID       uuid.UUID
 	Name     string
 	Url      string
 	Username string
@@ -76,7 +78,12 @@ func (q *Queries) GetAllFeedsWithUsername(ctx context.Context) ([]GetAllFeedsWit
 	var items []GetAllFeedsWithUsernameRow
 	for rows.Next() {
 		var i GetAllFeedsWithUsernameRow
-		if err := rows.Scan(&i.Name, &i.Url, &i.Username); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Url,
+			&i.Username,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -91,7 +98,7 @@ func (q *Queries) GetAllFeedsWithUsername(ctx context.Context) ([]GetAllFeedsWit
 }
 
 const getFeedByUrl = `-- name: GetFeedByUrl :one
-SELECT id, created_at, updated_at, name, url, user_id
+SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at
 FROM feeds
 WHERE url = $1
 `
@@ -106,6 +113,23 @@ func (q *Queries) GetFeedByUrl(ctx context.Context, url string) (Feed, error) {
 		&i.Name,
 		&i.Url,
 		&i.UserID,
+		&i.LastFetchedAt,
 	)
 	return i, err
+}
+
+const markFeedFetched = `-- name: MarkFeedFetched :exec
+UPDATE feeds
+SET updated_at = $2, last_fetched_at = $2
+WHERE id = $1
+`
+
+type MarkFeedFetchedParams struct {
+	ID        uuid.UUID
+	UpdatedAt time.Time
+}
+
+func (q *Queries) MarkFeedFetched(ctx context.Context, arg MarkFeedFetchedParams) error {
+	_, err := q.db.ExecContext(ctx, markFeedFetched, arg.ID, arg.UpdatedAt)
+	return err
 }

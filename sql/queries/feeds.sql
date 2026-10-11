@@ -11,7 +11,7 @@ VALUES (
 RETURNING *;
 
 -- name: GetAllFeedsWithUsername :many
-SELECT feeds.name, feeds.url, users.name as username
+SELECT feeds.id, feeds.name, feeds.url, users.name as username
 FROM feeds
 INNER JOIN users ON feeds.user_id = users.id;
 
@@ -19,3 +19,8 @@ INNER JOIN users ON feeds.user_id = users.id;
 SELECT *
 FROM feeds
 WHERE url = $1;
+
+-- name: MarkFeedFetched :exec
+UPDATE feeds
+SET updated_at = $2, last_fetched_at = $2
+WHERE id = $1;

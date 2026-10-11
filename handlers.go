@@ -110,21 +110,44 @@ func handlerAggregate(s *state, cmd cliCommand) error {
 		return fmt.Errorf("the `%s` command expects no arguments, %d found\n", cmd.name, len(cmd.args))
 	}
 
-	const url = "https://www.wagslane.dev/index.xml"
 	ctx := context.Background()
-	rssFeed, err := rss.FetchFeed(&ctx, url)
+	feeds, err := s.db.GetAllFeedsWithUsername(ctx)
 	if err != nil {
 		return err
 	}
 
-	if len(rssFeed.Channel.Items) == 0 {
-		fmt.Println("no RSS channel items")
+	if len(feeds) == 0 {
+		fmt.Println("no stored feeds")
 		return nil
 	}
 
-	fmt.Printf("found %d RSS items\n", len(rssFeed.Channel.Items))
+	for _, feed := range feeds {
+		fmt.Printf("fetching feed '%s'\n", feed.Name)
 
-	fmt.Println(rssFeed)
+		rssFeed, err := rss.FetchFeed(&ctx, feed.Url)
+		if err != nil {
+			fmt.Printf("ERROR: could not fetch '%s', skipping: %v\n", feed.Url, err)
+			continue
+		}
+
+		fmt.Printf("found %d RSS items\n", len(rssFeed.Channel.Items))
+
+		err = s.db.MarkFeedFetched(ctx, database.MarkFeedFetchedParams{
+			ID:        feed.ID,
+			UpdatedAt: time.Now().UTC(),
+		})
+		if err != nil {
+			// TODO this should probably stop the loop
+			fmt.Printf("ERROR: could not update last fetch time: %v\n", err)
+			continue
+		}
+
+		if len(rssFeed.Channel.Items) == 0 {
+			fmt.Println("no RSS channel items, skipping")
+			continue
+		}
+	}
+
 	return nil
 }
 
