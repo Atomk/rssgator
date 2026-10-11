@@ -128,7 +128,7 @@ func handlerAggregate(s *state, cmd cliCommand) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd cliCommand) error {
+func handlerAddFeed(s *state, cmd cliCommand, user database.User) error {
 	if len(cmd.args) < 2 {
 		return fmt.Errorf("the `%s` command expects 2 arguments, %d found\n", cmd.name, len(cmd.args))
 	}
@@ -137,12 +137,6 @@ func handlerAddFeed(s *state, cmd cliCommand) error {
 	url := strings.TrimSpace(cmd.args[1])
 	if name == "" || url == "" {
 		return errors.New("feed name and url cannot be empty or made of whitespace")
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.conf.CurrentUserName)
-	if err != nil {
-		// TODO do this only if the error is "no rows found"
-		return fmt.Errorf("current user is '%s' but it does not exist in database\n", s.conf.CurrentUserName)
 	}
 
 	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
@@ -204,7 +198,7 @@ func insertFeedFollows(s *state, userID, feedID uuid.UUID) (database.CreateFeedF
 	return feedFollow, nil
 }
 
-func handlerFollow(s *state, cmd cliCommand) error {
+func handlerFollow(s *state, cmd cliCommand, user database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("the `%s` command expects 1 argument, %d found\n", cmd.name, len(cmd.args))
 	}
@@ -212,12 +206,6 @@ func handlerFollow(s *state, cmd cliCommand) error {
 	url := strings.TrimSpace(cmd.args[0])
 	if url == "" {
 		return errors.New("url cannot be empty or made of whitespace")
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.conf.CurrentUserName)
-	if err != nil {
-		// TODO do this only if the error is "no rows found"
-		return fmt.Errorf("current user is '%s' but it does not exist in database\n", s.conf.CurrentUserName)
 	}
 
 	feed, err := s.db.GetFeedByUrl(context.Background(), url)
@@ -235,7 +223,7 @@ func handlerFollow(s *state, cmd cliCommand) error {
 	return nil
 }
 
-func handlerUnfollow(s *state, cmd cliCommand) error {
+func handlerUnfollow(s *state, cmd cliCommand, user database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("the `%s` command expects 1 argument, %d found\n", cmd.name, len(cmd.args))
 	}
@@ -243,12 +231,6 @@ func handlerUnfollow(s *state, cmd cliCommand) error {
 	url := strings.TrimSpace(cmd.args[0])
 	if url == "" {
 		return errors.New("url cannot be empty or made of whitespace")
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.conf.CurrentUserName)
-	if err != nil {
-		// TODO do this only if the error is "no rows found"
-		return fmt.Errorf("current user is '%s' but it does not exist in database\n", s.conf.CurrentUserName)
 	}
 
 	feed, err := s.db.GetFeedByUrl(context.Background(), url)
@@ -268,15 +250,9 @@ func handlerUnfollow(s *state, cmd cliCommand) error {
 	return nil
 }
 
-func handlerListFollowing(s *state, cmd cliCommand) error {
+func handlerListFollowing(s *state, cmd cliCommand, user database.User) error {
 	if len(cmd.args) != 0 {
 		return fmt.Errorf("the `%s` command expects no arguments, %d found\n", cmd.name, len(cmd.args))
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.conf.CurrentUserName)
-	if err != nil {
-		// TODO do this only if the error is "no rows found"
-		return fmt.Errorf("current user is '%s' but it does not exist in database\n", s.conf.CurrentUserName)
 	}
 
 	followedFeeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
