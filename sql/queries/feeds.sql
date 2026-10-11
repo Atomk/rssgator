@@ -24,3 +24,10 @@ WHERE url = $1;
 UPDATE feeds
 SET updated_at = $2, last_fetched_at = $2
 WHERE id = $1;
+
+-- name: GetNextFeedToFetch :one
+-- Return the feed with the oldest fetch time, or one that has never been fetched.
+SELECT *
+FROM feeds
+ORDER BY last_fetched_at NULLS FIRST
+LIMIT 1;
