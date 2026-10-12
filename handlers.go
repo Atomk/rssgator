@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"rssgator/internal/database"
@@ -139,10 +140,37 @@ func scrapeFeeds(s *state) {
 	}
 
 	for _, item := range rssFeed.Channel.Items {
-		fmt.Printf("- %s\n", item.Title)
-	}
+		// Mon, 12 Oct 2026 20:35:47 +0000
+		parsedPubDate, err := time.Parse(time.RFC1123Z, item.PubDate)
+		if err != nil {
+			fmt.Printf("ERROR: Could not parse publication date %q\n", item.PubDate)
+		}
+		pubDate := sql.NullTime{
+			Time:  parsedPubDate.UTC(),
+			Valid: err == nil,
+		}
+		_, err = s.db.CreatePost(ctx, database.CreatePostParams{
+			ID:          uuid.New(),
+			Title:       item.Title,
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+			Url:         item.Link,
+			Description: item.Description,
+			PublishedAt: pubDate,
+			FeedID:      feed.ID,
+		})
+		if err != nil {
+			// It's ok if the post cannot be inserted due to duplicate URL, it
+			// means it's already in the DB. All other errors should be logged.
+			duplicateUrlError := strings.HasSuffix(err.Error(), "constraint \"posts_url_key\" (23505)")
+			if !duplicateUrlError {
+				fmt.Printf("ERROR: %s\n", err)
+			}
+			continue
+		}
 
-	fmt.Println()
+		fmt.Printf("Added post '%s' (published %s)\n", item.Title, pubDate.Time.Format(time.DateTime))
+	}
 }
 
 // Start a loop that fetches the feeds at regular intervals.
