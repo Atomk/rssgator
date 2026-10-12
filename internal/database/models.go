@@ -12,11 +12,14 @@ import (
 )
 
 type Feed struct {
-	ID            uuid.UUID
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	Name          string
-	Url           string
+	ID        uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// Name of the feed, e.g. "Hacker News RSS".
+	Name string
+	// RSS endpoint/file URL.
+	Url string
+	// The user that created the feed.
 	UserID        uuid.UUID
 	LastFetchedAt sql.NullTime
 }
@@ -30,19 +33,24 @@ type FeedFollow struct {
 }
 
 type Post struct {
-	ID          uuid.UUID
-	Title       string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Url         string
+	ID        uuid.UUID
+	Title     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	// The URL of the post.
+	Url string
+	// A description of the post.
 	Description string
+	// The time the post was published. Can be NULL in case of an unsupported datetime format.
 	PublishedAt sql.NullTime
-	FeedID      uuid.UUID
+	// The ID of the feed that the post came from.
+	FeedID uuid.UUID
 }
 
 type User struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Name      string
+	// The username.
+	Name string
 }

@@ -1,4 +1,5 @@
 -- +goose Up
+-- Join table to store which users follow which feeds.
 CREATE TABLE feed_follows (
     id UUID PRIMARY KEY,
     created_at TIMESTAMP NOT NULL,

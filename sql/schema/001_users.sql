@@ -5,6 +5,7 @@ CREATE TABLE users (
     updated_at TIMESTAMP NOT NULL,
     name VARCHAR(20) UNIQUE NOT NULL
 );
+COMMENT ON COLUMN users.name IS 'The username.';
 
 -- +goose Down
 DROP TABLE users;
