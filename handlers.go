@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"rssgator/internal/database"
 	"rssgator/internal/rss"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,8 +49,8 @@ func handlerRegister(s *state, cmd cliCommand) error {
 
 	_, err := s.db.CreateUser(ctx, database.CreateUserParams{
 		ID:        uuid.New(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
 		Name:      username,
 	})
 	if err != nil {
@@ -123,7 +124,7 @@ func scrapeFeeds(s *state) {
 		return
 	}
 
-	fmt.Printf("found %d RSS items\n", len(rssFeed.Channel.Items))
+	// fmt.Printf("found %d RSS items\n", len(rssFeed.Channel.Items))
 
 	err = s.db.MarkFeedFetched(ctx, database.MarkFeedFetchedParams{
 		ID:        feed.ID,
@@ -343,6 +344,47 @@ func handlerListFollowing(s *state, cmd cliCommand, user database.User) error {
 	fmt.Printf("Feeds followed: %d\n", len(followedFeeds))
 	for _, followedFeed := range followedFeeds {
 		fmt.Printf("- %s | user: %s\n", followedFeed.FeedName, followedFeed.UserName)
+	}
+	return nil
+}
+
+func handlerListPosts(s *state, cmd cliCommand, user database.User) error {
+	if len(cmd.args) > 1 {
+		return fmt.Errorf("the `%s` command expects , or 1 arguments %d found\n", cmd.name, len(cmd.args))
+	}
+
+	var limit int32
+	if len(cmd.args) == 0 {
+		limit = 2
+	} else {
+		limit, err := strconv.Atoi(cmd.args[0])
+		if err != nil || limit < 1 {
+			return fmt.Errorf("you must provide a positive, non-zero number")
+		}
+	}
+
+	ctx := context.Background()
+	posts, err := s.db.GetPostsForUser(ctx, database.GetPostsForUserParams{
+		UserID: user.ID,
+		Limit:  limit,
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(posts) == 0 {
+		fmt.Println("no posts found for current user")
+		return nil
+	}
+
+	var pubTime string
+	for _, post := range posts {
+		if post.PublishedAt.Valid {
+			pubTime = post.PublishedAt.Time.Format(time.DateOnly)
+		} else {
+			pubTime = "XXXX-XX-XX"
+		}
+		fmt.Printf("- %s | %s\n", pubTime, post.Title)
 	}
 	return nil
 }

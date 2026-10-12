@@ -41,6 +41,7 @@ func main() {
 			"follow":    middlewareLoggedIn(handlerFollow),
 			"following": middlewareLoggedIn(handlerListFollowing),
 			"unfollow":  middlewareLoggedIn(handlerUnfollow),
+			"browse":    middlewareLoggedIn(handlerListPosts),
 		},
 	}
 
