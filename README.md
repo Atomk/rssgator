@@ -12,6 +12,29 @@ cd rssgator
 go run .
 ```
 
+
+## Setup
+
+This tool expects you to have PostgreSQL installed on your machine.
+Instructions vary by system, for reference on Ubuntu (WSL) I used this:
+https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-database#install-postgresql
+
+```sh
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+```
+
+After setting up postgres you need to create the database used by this program:
+```sh
+sudo -u postgres psql
+# In the psql shell
+CREATE DATABASE rssgator;
+\c rssgator
+ALTER USER postgres PASSWORD 'mypassword';
+```
+The name of the database can be whatever you want, I used `rssgator`. It's not necessary to set a password for the DB user if you just use this locally but it's recommended. Note that you'll need the database name and password set here to put them in the configuration file and the connection string used with the `goose` command to run migrations.
+
+
 ## Updating database and models
 
 You need:
