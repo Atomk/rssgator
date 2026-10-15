@@ -52,7 +52,15 @@ func main() {
 		configOptions = &config.Config{
 			DbUrl: "postgres://example",
 		}
-		configOptions.Write()
+		err = configOptions.Write()
+		if err != nil {
+			fmt.Printf("could not write the config file: %v\n", err)
+			os.Exit(1)
+		}
+		// File was written successfully, but the config file still contains
+		// example data. Notify the user and stop here for now.
+		fmt.Println("see the README for information on how to set up the config file")
+		os.Exit(0)
 	}
 
 	db, err := sql.Open("postgres", configOptions.DbUrl)
