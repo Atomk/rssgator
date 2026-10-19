@@ -3,9 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"maps"
 	"os"
 	"rssgator/internal/config"
 	"rssgator/internal/database"
+	"slices"
 	"strings"
 
 	// Postgres driver for the database/sql package
@@ -168,7 +170,9 @@ func (c *commands) register(name string, f cliCommandInfo) error {
 
 func (c *commands) printHelp() {
 	fmt.Println("Available commands:")
-	for name, cmdInfo := range c.nameToCmdInfo {
+	sortedCmdNames := slices.Sorted(maps.Keys(c.nameToCmdInfo))
+	for _, name := range sortedCmdNames {
+		cmdInfo := c.nameToCmdInfo[name]
 		fmt.Printf("- %s: %s\n", name, cmdInfo.description)
 		if len(cmdInfo.argsNames) > 0 {
 			fmt.Printf("  Arguments: %v\n", strings.Join(cmdInfo.argsNames, ", "))
