@@ -6,6 +6,7 @@ import (
 	"os"
 	"rssgator/internal/config"
 	"rssgator/internal/database"
+	"strings"
 
 	// Postgres driver for the database/sql package
 	_ "github.com/lib/pq"
@@ -23,25 +24,71 @@ type cliCommand struct {
 
 type cliCommandHandler func(*state, cliCommand) error
 
+type cliCommandInfo struct {
+	description string
+	argsNames   []string
+	handler     cliCommandHandler
+}
+
 type commands struct {
-	nameToHandler map[string]cliCommandHandler
+	nameToCmdInfo map[string]cliCommandInfo
 }
 
 func main() {
 	// Initialize commands list
 	commandsList := commands{
-		nameToHandler: map[string]cliCommandHandler{
-			"login":     handlerLogin,
-			"register":  handlerRegister,
-			"reset":     handlerReset,
-			"users":     handlerListUsers,
-			"agg":       handlerAggregate,
-			"addfeed":   middlewareLoggedIn(handlerAddFeed),
-			"feeds":     handlerListFeeds,
-			"follow":    middlewareLoggedIn(handlerFollow),
-			"following": middlewareLoggedIn(handlerListFollowing),
-			"unfollow":  middlewareLoggedIn(handlerUnfollow),
-			"browse":    middlewareLoggedIn(handlerListPosts),
+		nameToCmdInfo: map[string]cliCommandInfo{
+			"login": {
+				description: "Login and set as the current user. Use the `register` command to register first.",
+				argsNames:   []string{"username"},
+				handler:     handlerLogin,
+			},
+			"register": {
+				description: "Register a new user, and set it as the current user.",
+				argsNames:   []string{"username"},
+				handler:     handlerRegister,
+			},
+			"reset": {
+				description: "Resets the user table, deleting all registered users.",
+				handler:     handlerReset,
+			},
+			"users": {
+				description: "Show a list of all registered users.",
+				handler:     handlerListUsers,
+			},
+			"agg": {
+				description: "Start a loop that periodically aggregates feeds, storing all new posts. This is not asynchronous, meaning it does not run in the background.",
+				argsNames:   []string{"timeBetweenRequests (e.g. 30s, 2m)"},
+				handler:     handlerAggregate,
+			},
+			"addfeed": {
+				description: "Add a new feed, and start following it.",
+				argsNames:   []string{"name", "url"},
+				handler:     middlewareLoggedIn(handlerAddFeed),
+			},
+			"feeds": {
+				description: "Show a list of each stored feed, along with the user that added it.",
+				handler:     handlerListFeeds,
+			},
+			"follow": {
+				description: "Start following the feed with the given URL.",
+				argsNames:   []string{"url"},
+				handler:     middlewareLoggedIn(handlerFollow),
+			},
+			"following": {
+				description: "List all feeds followed by the current user.",
+				handler:     middlewareLoggedIn(handlerListFollowing),
+			},
+			"unfollow": {
+				description: "Unfollow the feed with the given URL.",
+				argsNames:   []string{"url"},
+				handler:     middlewareLoggedIn(handlerUnfollow),
+			},
+			"browse": {
+				description: "List all posts found in feeds followed by the current user.",
+				argsNames:   []string{"limit (optional, positive integer)"},
+				handler:     middlewareLoggedIn(handlerListPosts),
+			},
 		},
 	}
 
@@ -77,8 +124,13 @@ func main() {
 
 	// Command execution
 	if len(os.Args) < 2 {
-		fmt.Println("this program needs at least one argument")
+		fmt.Println("This program needs at least one argument.")
+		commandsList.printHelp()
 		os.Exit(1)
+	}
+	if os.Args[1] == "help" || os.Args[1] == "-h" {
+		commandsList.printHelp()
+		os.Exit(0)
 	}
 	cmd := cliCommand{
 		name: os.Args[1],
@@ -97,19 +149,29 @@ func main() {
 
 // Run a given command.
 func (c *commands) run(s *state, cmd cliCommand) error {
-	handler, exists := c.nameToHandler[cmd.name]
+	cmdInfo, exists := c.nameToCmdInfo[cmd.name]
 	if !exists {
 		return fmt.Errorf("command `%s` not found", cmd.name)
 	}
-	return handler(s, cmd)
+	return cmdInfo.handler(s, cmd)
 }
 
 // Register a handler function for a given command name.
-func (c *commands) register(name string, f cliCommandHandler) error {
-	_, exists := c.nameToHandler[name]
+func (c *commands) register(name string, f cliCommandInfo) error {
+	_, exists := c.nameToCmdInfo[name]
 	if exists {
 		return fmt.Errorf("command name `%s` is already registered", name)
 	}
-	c.nameToHandler[name] = f
+	c.nameToCmdInfo[name] = f
 	return nil
+}
+
+func (c *commands) printHelp() {
+	fmt.Println("Available commands:")
+	for name, cmdInfo := range c.nameToCmdInfo {
+		fmt.Printf("- %s: %s\n", name, cmdInfo.description)
+		if len(cmdInfo.argsNames) > 0 {
+			fmt.Printf("  Arguments: %v\n", strings.Join(cmdInfo.argsNames, ", "))
+		}
+	}
 }

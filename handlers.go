@@ -350,7 +350,7 @@ func handlerListFollowing(s *state, cmd cliCommand, user database.User) error {
 
 func handlerListPosts(s *state, cmd cliCommand, user database.User) error {
 	if len(cmd.args) > 1 {
-		return fmt.Errorf("the `%s` command expects , or 1 arguments %d found\n", cmd.name, len(cmd.args))
+		return fmt.Errorf("the `%s` command expects 0 or 1 arguments %d found\n", cmd.name, len(cmd.args))
 	}
 
 	var limit int32
